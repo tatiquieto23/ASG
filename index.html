@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff9ee">
+  <title>Word Whiz — Slice & Say</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", system-ui, sans-serif;
+      color: #233c39;
+      background: #fff9ee;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      --ink: #233c39;
+      --muted: #71847b;
+      --green: #2e8b69;
+      --cream: #fff9ee;
+      --coral: #ff8068;
+      --yellow: #ffd76f;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      padding: 24px;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 12% 10%, rgba(255, 215, 111, .24), transparent 25%),
+        radial-gradient(ellipse at 92% 87%, rgba(95, 190, 149, .14), transparent 28%),
+        var(--cream);
+    }
+
+    button { font: inherit; }
+
+    .app {
+      width: min(1050px, 100%);
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 2px 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 46px;
+      height: 46px;
+      place-items: center;
+      border: 2px solid rgba(35, 60, 57, .08);
+      border-radius: 16px;
+      background: #ffda78;
+      font-size: 25px;
+      transform: rotate(-7deg);
+    }
+
+    .brand-name {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 900;
+      letter-spacing: -.5px;
+    }
+
+    .brand-tagline {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .sound-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 0 15px;
+      border: 1px solid #e8e8d9;
+      border-radius: 14px;
+      background: rgba(255,255,255,.82);
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .18s, box-shadow .18s;
+    }
+
+    .sound-toggle:hover { transform: translateY(-2px); box-shadow: 0 5px 14px #41554812; }
+
+    .game-shell {
+      overflow: hidden;
+      border: 1px solid rgba(59, 83, 68, .1);
+      border-radius: 30px;
+      background: #fff;
+      box-shadow: 0 22px 70px rgba(67, 80, 57, .11), 0 3px 12px rgba(67, 80, 57, .05);
+    }
+
+    .game-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 24px 28px 19px;
+    }
+
+    .heading h1 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 29px);
+      font-weight: 950;
+      letter-spacing: -1.1px;
+    }
+
+    .heading p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .stats { display: flex; gap: 10px; }
+
+    .stat {
+      min-width: 83px;
+      padding: 9px 14px 8px;
+      border-radius: 15px;
+      background: #f5f8ee;
+      text-align: center;
+    }
+
+    .stat.score { background: #fff3d3; }
+    .stat-label { display: block; color: var(--muted); font-size: 10px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
+    .stat-value { display: block; margin-top: 1px; font-size: 21px; font-weight: 950; line-height: 1.1; }
+
+    .category-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 28px 16px;
+    }
+
+    .category-label {
+      margin-right: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+    }
+
+    .category {
+      min-height: 33px;
+      padding: 0 12px;
+      border: 1px solid #e9eee5;
+      border-radius: 99px;
+      background: #fff;
+      color: #60736c;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+
+    .category:hover { border-color: #9dcdb1; }
+    .category[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: #fff; }
+
+    .play-area {
+      position: relative;
+      height: clamp(350px, 53vw, 505px);
+      margin: 0 14px;
+      overflow: hidden;
+      border: 1px solid rgba(68, 114, 84, .1);
+      border-radius: 23px;
+      background:
+        radial-gradient(ellipse at 19% 23%, rgba(255,255,255,.85) 0 1px, transparent 2px),
+        radial-gradient(ellipse at 76% 18%, rgba(255,255,255,.78) 0 2px, transparent 3px),
+        radial-gradient(ellipse at 83% 75%, rgba(255,255,255,.72) 0 1px, transparent 2px),
+        linear-gradient(160deg, #eaf8de 0%, #dff3e5 48%, #e8f4dc 100%);
+      background-size: auto, auto, auto, 100% 100%;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .play-area::before, .play-area::after {
+      position: absolute;
+      z-index: 0;
+      width: 180px;
+      height: 180px;
+      border: 1px solid rgba(255,255,255,.4);
+      border-radius: 50%;
+      content: "";
+      pointer-events: none;
+    }
+    .play-area::before { top: -110px; right: 12%; }
+    .play-area::after { bottom: -132px; left: 10%; width: 240px; height: 240px; }
+
+    #game-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    .instruction {
+      position: absolute;
+      z-index: 1;
+      top: 16px;
+      left: 50%;
+      padding: 8px 14px;
+      border: 1px solid rgba(83, 120, 87, .1);
+      border-radius: 99px;
+      background: rgba(255,255,255,.72);
+      color: #587261;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .1px;
+      transform: translateX(-50%);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .word-pop {
+      position: absolute;
+      z-index: 2;
+      top: 66px;
+      left: 50%;
+      display: grid;
+      min-width: 180px;
+      justify-items: center;
+      gap: 2px;
+      padding: 12px 24px 13px;
+      border: 2px solid rgba(255,255,255,.95);
+      border-radius: 22px;
+      background: linear-gradient(145deg, #fff 18%, #f5ffeb 100%);
+      box-shadow: 0 10px 28px rgba(43, 76, 57, .17), 0 0 0 5px rgba(255,255,255,.2);
+      text-align: center;
+      transform: translate(-50%, -16px) scale(.72) rotate(-5deg);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .word-pop::before, .word-pop::after {
+      position: absolute;
+      color: #f0b832;
+      font-size: 20px;
+      content: "✦";
+      animation: sparkle-twinkle .8s ease-in-out infinite alternate;
+    }
+    .word-pop::before { top: 7px; left: 9px; }
+    .word-pop::after { right: 9px; bottom: 8px; color: #ff8068; animation-delay: .2s; }
+    .word-pop.show { animation: word-card-pop .48s cubic-bezier(.2,.8,.25,1.25) both; }
+    .word-emoji { font-size: 27px; line-height: 1.1; }
+    img.word-emoji { width: 34px; height: 34px; object-fit: contain; }
+    .word-pop.show .word-emoji { animation: emoji-bob .45s ease-in-out .15s 3 alternate; }
+    .word-pop strong {
+      display: block;
+      color: var(--word-color, var(--green));
+      font-size: clamp(24px, 4vw, 32px);
+      font-weight: 950;
+      letter-spacing: -.5px;
+      line-height: 1.1;
+      text-shadow: 0 2px 0 rgba(255,255,255,.8);
+    }
+    .word-cheer { color: #758779; font-size: 10px; font-weight: 900; letter-spacing: 1.1px; text-transform: uppercase; }
+
+    .overlay {
+      position: absolute;
+      z-index: 3;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(225, 241, 220, .6);
+      backdrop-filter: blur(5px);
+      transition: opacity .2s;
+    }
+    .overlay[hidden] { display: none; }
+
+    .overlay-card {
+      width: min(370px, 100%);
+      padding: 27px 28px 25px;
+      border: 1px solid rgba(255,255,255,.8);
+      border-radius: 25px;
+      background: rgba(255,255,255,.94);
+      box-shadow: 0 15px 50px rgba(48, 78, 53, .13);
+      text-align: center;
+    }
+    .overlay-art { margin-bottom: 5px; font-size: 48px; letter-spacing: 5px; }
+    .overlay-card h2 { margin: 0; font-size: 26px; font-weight: 950; letter-spacing: -.7px; }
+    .overlay-card p { margin: 9px 0 19px; color: #6f8177; font-size: 14px; line-height: 1.55; }
+    .start-button {
+      min-height: 48px;
+      padding: 0 24px;
+      border: 0;
+      border-radius: 15px;
+      background: var(--green);
+      box-shadow: 0 5px 0 #226c51;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .start-button:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #226c51; }
+    .start-button:active { transform: translateY(3px); box-shadow: 0 2px 0 #226c51; }
+
+    .bottom-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 17px 28px 21px;
+    }
+    .learned-label { color: var(--muted); font-size: 11px; font-weight: 900; letter-spacing: .8px; text-transform: uppercase; }
+    .learned-words { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+    .learned-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 9px;
+      border-radius: 9px;
+      background: #eff7eb;
+      color: #43735a;
+      font-size: 11px;
+      font-weight: 850;
+      animation: chip-in .25s ease-out both;
+    }
+    .learned-icon { width: 18px; height: 18px; object-fit: contain; }
+    .learned-empty { color: #9aa79d; font-size: 12px; font-weight: 650; }
+    .round-note { flex: 0 0 auto; color: #8a9a8d; font-size: 11px; font-weight: 750; text-align: right; }
+    .round-note b { color: #61796a; }
+
+    @keyframes chip-in { from { opacity: 0; transform: translateY(4px) scale(.9); } to { opacity: 1; transform: none; } }
+
+    @media (max-width: 620px) {
+      body { padding: 14px 12px; }
+      .topbar { margin-bottom: 12px; }
+      .game-shell { border-radius: 23px; }
+      .game-header { align-items: flex-start; padding: 19px 17px 14px; }
+      .heading p { max-width: 210px; font-size: 12px; }
+      .stats { gap: 6px; }
+      .stat { min-width: 58px; padding: 8px 8px 7px; border-radius: 12px; }
+      .stat-value { font-size: 18px; }
+      .stat-label { font-size: 9px; }
+      .category-row { gap: 6px; padding: 0 17px 13px; overflow-x: auto; }
+      .category-label { display: none; }
+      .category { padding: 0 11px; white-space: nowrap; }
+      .play-area { height: min(62vh, 480px); min-height: 340px; margin: 0 8px; border-radius: 18px; }
+      .bottom-row { align-items: flex-start; padding: 15px 17px 18px; }
+      .round-note { max-width: 110px; line-height: 1.5; }
+      .instruction { top: 13px; font-size: 11px; }
+      .word-pop { top: 52px; min-width: 160px; }
+    }
+
+    @keyframes word-card-pop {
+      0% { opacity: 0; transform: translate(-50%, -22px) scale(.65) rotate(-7deg); }
+      68% { opacity: 1; transform: translate(-50%, 3px) scale(1.08) rotate(2deg); }
+      100% { opacity: 1; transform: translate(-50%, 0) scale(1) rotate(0); }
+    }
+    @keyframes emoji-bob {
+      from { transform: translateY(2px) rotate(-8deg) scale(.95); }
+      to { transform: translateY(-4px) rotate(8deg) scale(1.12); }
+    }
+    @keyframes sparkle-twinkle {
+      from { opacity: .45; transform: scale(.75) rotate(-15deg); }
+      to { opacity: 1; transform: scale(1.15) rotate(15deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">🍉</div>
+        <div>
+          <p class="brand-name">Word Whiz</p>
+          <p class="brand-tagline">Little slices, big words!</p>
+        </div>
+      </div>
+      <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="true">
+        <span aria-hidden="true">🔊</span><span id="sound-label">Sound on</span>
+      </button>
+    </header>
+
+    <section class="game-shell" aria-label="Word Whiz learning game">
+      <header class="game-header">
+        <div class="heading">
+          <h1>Slice &amp; say!</h1>
+          <p>Swipe through a picture to hear its name and see the word.</p>
+        </div>
+        <div class="stats" aria-label="Game stats">
+          <div class="stat score"><span class="stat-label">Score</span><span class="stat-value" id="score">0</span></div>
+          <div class="stat"><span class="stat-label">Time</span><span class="stat-value" id="timer">60</span></div>
+        </div>
+      </header>
+
+      <nav class="category-row" aria-label="Choose word category">
+        <span class="category-label">Practice</span>
+        <button class="category" type="button" data-category="all" aria-pressed="true">Everything</button>
+        <button class="category" type="button" data-category="fruit" aria-pressed="false">🍎 Fruit</button>
+        <button class="category" type="button" data-category="vegetable" aria-pressed="false">🥕 Veggies</button>
+        <button class="category" type="button" data-category="home" aria-pressed="false">🏠 At home</button>
+      </nav>
+
+      <div class="play-area" id="play-area">
+        <canvas id="game-canvas" aria-label="Floating pictures to slice"></canvas>
+        <div class="instruction" aria-hidden="true">✦ Swipe through a picture to slice it ✦</div>
+        <div class="word-pop" id="word-pop" aria-live="polite">
+          <span class="word-emoji" id="pop-emoji" aria-hidden="true"></span>
+          <strong id="pop-word"></strong>
+          <span class="word-cheer">You found it!</span>
+        </div>
+        <div class="overlay" id="overlay">
+          <div class="overlay-card">
+            <div class="overlay-art" aria-hidden="true">🍎 🥕 🧸</div>
+            <h2 id="overlay-title">Ready, word whiz?</h2>
+            <p id="overlay-copy">Slice a floating picture to hear its name and see the word. You have 60 seconds to learn!</p>
+            <button class="start-button" id="start-button" type="button">Let's play!</button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="bottom-row">
+        <div>
+          <div class="learned-label">Words you've learned</div>
+          <div class="learned-words" id="learned-words"><span class="learned-empty">Slice a picture to get started!</span></div>
+        </div>
+        <div class="round-note"><b>Tip:</b> Listen close<br>and say it along!</div>
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const customIcons = {
+        cup: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M22 22h45l-5 61H29z" fill="#b9e8e2" stroke="#527c73" stroke-width="5" stroke-linejoin="round"/><path d="M67 34h7a13 13 0 0 1 0 26h-9" fill="none" stroke="#527c73" stroke-width="5"/><path d="M31 34h29" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>',
+        spoon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M48 43v43" stroke="#647a70" stroke-width="8" stroke-linecap="round"/><ellipse cx="48" cy="27" rx="14" ry="20" fill="#d9e3dd" stroke="#647a70" stroke-width="5"/></svg>',
+        fork: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M48 44v42" stroke="#647a70" stroke-width="7" stroke-linecap="round"/><path d="M33 14v20m10-20v20m10-20v20m10-20v20c0 9-5 14-15 14s-15-5-15-14" fill="none" stroke="#647a70" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        knife: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M39 15c10 9 19 21 21 36L48 59 34 52z" fill="#dce8e2" stroke="#647a70" stroke-width="5" stroke-linejoin="round"/><path d="m47 56 12-8 9 13-27 27-12-12z" fill="#c98f67" stroke="#765843" stroke-width="5" stroke-linejoin="round"/></svg>',
+        plate: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><circle cx="48" cy="48" r="37" fill="#fff" stroke="#71877d" stroke-width="5"/><circle cx="48" cy="48" r="25" fill="#f3f8f2" stroke="#b6c8bd" stroke-width="4"/></svg>',
+        bowl: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M17 39h62c-3 25-16 40-31 40S20 64 17 39Z" fill="#f6c875" stroke="#8e6945" stroke-width="5" stroke-linejoin="round"/><path d="M17 39h62" stroke="#8e6945" stroke-width="6" stroke-linecap="round"/></svg>',
+        pan: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="m68 40 19-9" stroke="#805f49" stroke-width="9" stroke-linecap="round"/><path d="M14 39h57c-2 23-12 34-28 34S17 62 14 39Z" fill="#7f9290" stroke="#526963" stroke-width="5" stroke-linejoin="round"/><path d="M18 39h51" stroke="#d7e3dd" stroke-width="4" stroke-linecap="round"/></svg>',
+        pot: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M26 34h44v42a7 7 0 0 1-7 7H33a7 7 0 0 1-7-7z" fill="#e88a60" stroke="#845b48" stroke-width="5"/><path d="M17 43h9m44 0h9M22 32h52" stroke="#845b48" stroke-width="5" stroke-linecap="round"/><path d="M43 24h10m-5-2v-5" stroke="#845b48" stroke-width="5" stroke-linecap="round"/></svg>',
+        towel: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M22 19h53v48H22z" fill="#83c9bb" stroke="#4d8279" stroke-width="5" stroke-linejoin="round"/><path d="M22 55h53v22H22z" fill="#b6e2d9" stroke="#4d8279" stroke-width="5" stroke-linejoin="round"/><path d="M34 28v18m12-18v18m12-18v18" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>',
+        book: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M25 14h47v68H25a7 7 0 0 1-7-7V21a7 7 0 0 1 7-7Z" fill="#f0a36f" stroke="#805b47" stroke-width="5"/><path d="M30 14v68m9-52h23" fill="none" stroke="#fff1d9" stroke-width="5" stroke-linecap="round"/></svg>',
+        lamp: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M31 18h34L74 43H22z" fill="#ffd66e" stroke="#8f7549" stroke-width="5" stroke-linejoin="round"/><path d="M48 44v29m-14 8h28" fill="none" stroke="#8f7549" stroke-width="6" stroke-linecap="round"/><path d="M39 73h18l6 8H33z" fill="#c78d61" stroke="#8f7549" stroke-width="4" stroke-linejoin="round"/></svg>',
+        teapot: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M28 34h39v35a8 8 0 0 1-8 8H36a8 8 0 0 1-8-8z" fill="#d5a5d8" stroke="#795d7b" stroke-width="5"/><path d="M67 42h7l13 9-13 9h-7M28 44c-20-2-20 27 0 25M36 28h23m-12-7v7" fill="none" stroke="#795d7b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      };
+
+      const vocabulary = [
+        { word: "Apple", emoji: "🍎", category: "fruit" },
+        { word: "Banana", emoji: "🍌", category: "fruit" },
+        { word: "Orange", emoji: "🍊", category: "fruit" },
+        { word: "Strawberry", emoji: "🍓", category: "fruit" },
+        { word: "Grapes", emoji: "🍇", category: "fruit" },
+        { word: "Pear", emoji: "🍐", category: "fruit" },
+        { word: "Watermelon", emoji: "🍉", category: "fruit" },
+        { word: "Pineapple", emoji: "🍍", category: "fruit" },
+        { word: "Carrot", emoji: "🥕", category: "vegetable" },
+        { word: "Broccoli", emoji: "🥦", category: "vegetable" },
+        { word: "Corn", emoji: "🌽", category: "vegetable" },
+        { word: "Tomato", emoji: "🍅", category: "vegetable" },
+        { word: "Potato", emoji: "🥔", category: "vegetable" },
+        { word: "Pepper", emoji: "🫑", category: "vegetable" },
+        { word: "Cucumber", emoji: "🥒", category: "vegetable" },
+        { word: "Onion", emoji: "🧅", category: "vegetable" },
+        { word: "Cup", icon: "cup", category: "home" },
+        { word: "Spoon", icon: "spoon", category: "home" },
+        { word: "Fork", icon: "fork", category: "home" },
+        { word: "Knife", icon: "knife", category: "home" },
+        { word: "Plate", icon: "plate", category: "home" },
+        { word: "Bowl", icon: "bowl", category: "home" },
+        { word: "Pan", icon: "pan", category: "home" },
+        { word: "Pot", icon: "pot", category: "home" },
+        { word: "Teapot", icon: "teapot", category: "home" },
+        { word: "Book", icon: "book", category: "home" },
+        { word: "Clock", emoji: "⏰", category: "home" },
+        { word: "Lamp", icon: "lamp", category: "home" },
+        { word: "Chair", emoji: "🪑", category: "home" },
+        { word: "Key", emoji: "🔑", category: "home" },
+        { word: "Teddy", emoji: "🧸", category: "home" },
+        { word: "Towel", icon: "towel", category: "home" },
+        { word: "Toothbrush", emoji: "🪥", category: "home" }
+      ];
+
+      const canvas = document.querySelector("#game-canvas");
+      const ctx = canvas.getContext("2d");
+      const playArea = document.querySelector("#play-area");
+      const scoreDisplay = document.querySelector("#score");
+      const timerDisplay = document.querySelector("#timer");
+      const overlay = document.querySelector("#overlay");
+      const startButton = document.querySelector("#start-button");
+      const overlayTitle = document.querySelector("#overlay-title");
+      const overlayCopy = document.querySelector("#overlay-copy");
+      const soundToggle = document.querySelector("#sound-toggle");
+      const soundLabel = document.querySelector("#sound-label");
+      const learnedContainer = document.querySelector("#learned-words");
+      const wordPop = document.querySelector("#word-pop");
+      const popEmoji = document.querySelector("#pop-emoji");
+      const popWord = document.querySelector("#pop-word");
+      const iconImages = Object.create(null);
+
+      let width = 0;
+      let height = 0;
+      let pixelRatio = 1;
+      let active = false;
+      let soundOn = true;
+      let selectedCategory = "all";
+      let score = 0;
+      let secondsLeft = 60;
+      let lastTime = 0;
+      let spawnClock = 0;
+      let wordPopTimeout = 0;
+      let items = [];
+      let particles = [];
+      let learned = new Set();
+      let pointerDown = false;
+      let lastPointer = null;
+      let trail = [];
+
+      function resizeCanvas() {
+        const rect = playArea.getBoundingClientRect();
+        pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        width = rect.width;
+        height = rect.height;
+        canvas.width = Math.round(width * pixelRatio);
+        canvas.height = Math.round(height * pixelRatio);
+        ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      }
+
+      function availableWords() {
+        return selectedCategory === "all"
+          ? vocabulary
+          : vocabulary.filter(item => item.category === selectedCategory);
+      }
+
+      function iconSource(icon) {
+        return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(customIcons[icon])}`;
+      }
+
+      function getIconImage(icon) {
+        if (!iconImages[icon]) {
+          const image = new Image();
+          image.onload = render;
+          image.src = iconSource(icon);
+          iconImages[icon] = image;
+        }
+        return iconImages[icon];
+      }
+
+      function setItemVisual(container, item, className) {
+        container.replaceChildren();
+        if (item.icon) {
+          const image = document.createElement("img");
+          image.className = className;
+          image.src = iconSource(item.icon);
+          image.alt = "";
+          image.setAttribute("aria-hidden", "true");
+          container.append(image);
+        } else {
+          container.textContent = item.emoji;
+        }
+      }
+
+      function spawnItem() {
+        const list = availableWords();
+        const entry = list[Math.floor(Math.random() * list.length)];
+        const radius = 44 + Math.random() * 7;
+        items.push({
+          ...entry,
+          x: radius + Math.random() * Math.max(1, width - radius * 2),
+          y: -radius - 10,
+          radius,
+          vx: (Math.random() - .5) * 2.3,
+          vy: .8 + Math.random() * 1.1,
+          rotation: (Math.random() - .5) * .28,
+          spin: (Math.random() - .5) * .0018,
+          wobble: Math.random() * Math.PI * 2,
+          wobbleSpeed: .001 + Math.random() * .0016,
+          wobbleSize: 10 + Math.random() * 17
+        });
+      }
+
+      function drawItem(item) {
+        ctx.save();
+        ctx.translate(item.x, item.y);
+        ctx.rotate(item.rotation);
+        ctx.shadowColor = "rgba(45, 80, 52, .16)";
+        ctx.shadowBlur = 12;
+        ctx.shadowOffsetY = 6;
+        ctx.beginPath();
+        ctx.arc(0, 0, item.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255, 255, 255, .76)";
+        ctx.fill();
+        ctx.shadowColor = "transparent";
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(255, 255, 255, .96)";
+        ctx.stroke();
+        if (item.icon) {
+          const image = getIconImage(item.icon);
+          if (image.complete && image.naturalWidth) {
+            const size = item.radius * 1.45;
+            ctx.drawImage(image, -size / 2, -size / 2, size, size);
+          }
+        } else {
+          ctx.font = `${Math.round(item.radius * 1.25)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(item.emoji, 0, 2);
+        }
+        ctx.restore();
+      }
+
+      function drawTrail() {
+        if (trail.length < 2) return;
+        ctx.save();
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        for (let i = 1; i < trail.length; i++) {
+          const opacity = i / trail.length;
+          ctx.beginPath();
+          ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
+          ctx.lineTo(trail[i].x, trail[i].y);
+          ctx.strokeStyle = `rgba(255, 128, 104, ${opacity * .88})`;
+          ctx.lineWidth = 3 + opacity * 5;
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, width, height);
+        items.forEach(drawItem);
+        drawTrail();
+      }
+
+      function pointToSegmentDistance(point, start, end) {
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const lengthSquared = dx * dx + dy * dy;
+        if (!lengthSquared) return Math.hypot(point.x - start.x, point.y - start.y);
+        const t = Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared));
+        return Math.hypot(point.x - (start.x + t * dx), point.y - (start.y + t * dy));
+      }
+
+      function showLearnedWord(item) {
+        const categoryColors = {
+          fruit: "#e26b4e",
+          vegetable: "#39835a",
+          home: "#7962b7"
+        };
+        setItemVisual(popEmoji, item, "word-emoji");
+        popWord.textContent = item.word;
+        wordPop.style.setProperty("--word-color", categoryColors[item.category] || "#2e8b69");
+        wordPop.classList.remove("show");
+        void wordPop.offsetWidth;
+        wordPop.classList.add("show");
+        window.clearTimeout(wordPopTimeout);
+        wordPopTimeout = window.setTimeout(() => wordPop.classList.remove("show"), 2000);
+
+        if (!learned.has(item.word)) {
+          if (learned.size === 0) learnedContainer.replaceChildren();
+          learned.add(item.word);
+          const chip = document.createElement("span");
+          chip.className = "learned-chip";
+          if (item.icon) {
+            const image = document.createElement("img");
+            image.className = "learned-icon";
+            image.src = iconSource(item.icon);
+            image.alt = "";
+            chip.append(image);
+          } else {
+            chip.append(document.createTextNode(`${item.emoji} `));
+          }
+          const label = document.createElement("span");
+          label.textContent = item.word;
+          chip.append(label);
+          learnedContainer.append(chip);
+        }
+
+        if (soundOn && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(item.word);
+          utterance.rate = .82;
+          utterance.pitch = 1.12;
+          window.speechSynthesis.speak(utterance);
+        }
+      }
+
+      function makeBurst(item) {
+        for (let i = 0; i < 13; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 1 + Math.random() * 3;
+          particles.push({
+            x: item.x, y: item.y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 1,
+            life: .65 + Math.random() * .45,
+            maxLife: 1.1,
+            size: 3 + Math.random() * 4,
+            color: ["#ff8068", "#ffd76f", "#fff", "#77bd86"][Math.floor(Math.random() * 4)]
+          });
+        }
+      }
+
+      function sliceAt(start, end) {
+        if (!active) return;
+        for (let i = items.length - 1; i >= 0; i--) {
+          const item = items[i];
+          if (pointToSegmentDistance(item, start, end) < item.radius + 5) {
+            items.splice(i, 1);
+            score += 10;
+            scoreDisplay.textContent = score;
+            makeBurst(item);
+            showLearnedWord(item);
+          }
+        }
+      }
+
+      function positionFromEvent(event) {
+        const rect = canvas.getBoundingClientRect();
+        return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      }
+
+      function finishRound() {
+        active = false;
+        items = [];
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        overlayTitle.textContent = "Amazing word work!";
+        overlayCopy.textContent = `You scored ${score} points and learned ${learned.size} ${learned.size === 1 ? "word" : "words"}. Ready for another round?`;
+        startButton.textContent = "Play again!";
+        overlay.hidden = false;
+      }
+
+      function startRound() {
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        active = true;
+        score = 0;
+        secondsLeft = 60;
+        spawnClock = 0;
+        items = [];
+        particles = [];
+        learned = new Set();
+        scoreDisplay.textContent = "0";
+        timerDisplay.textContent = "60";
+        learnedContainer.innerHTML = '<span class="learned-empty">Slice a picture to get started!</span>';
+        wordPop.classList.remove("show");
+        overlay.hidden = true;
+        lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+      }
+
+      function update(delta) {
+        if (active) {
+          secondsLeft = Math.max(0, secondsLeft - delta / 1000);
+          timerDisplay.textContent = Math.ceil(secondsLeft);
+          spawnClock += delta;
+          if (spawnClock > 2100 && items.length < 2) {
+            spawnItem();
+            spawnClock = 0;
+          }
+          for (const item of items) {
+            item.wobble += item.wobbleSpeed * delta;
+            item.x += (item.vx + Math.sin(item.wobble) * .18) * delta * .06;
+            item.y += item.vy * delta * .06;
+            item.rotation += item.spin * delta;
+            if (item.x < item.radius || item.x > width - item.radius) item.vx *= -1;
+          }
+          items = items.filter(item => item.y < height + item.radius + 15);
+          if (secondsLeft <= 0) finishRound();
+        }
+        for (const particle of particles) {
+          particle.x += particle.vx * delta * .06;
+          particle.y += particle.vy * delta * .06;
+          particle.vy += .09 * delta * .06;
+          particle.life -= delta / 1000;
+        }
+        particles = particles.filter(particle => particle.life > 0);
+      }
+
+      function drawParticles() {
+        for (const particle of particles) {
+          ctx.globalAlpha = Math.min(1, particle.life / particle.maxLife);
+          ctx.fillStyle = particle.color;
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function gameLoop(now) {
+        if (!active) {
+          render();
+          drawParticles();
+          return;
+        }
+        const delta = Math.min(now - lastTime, 40);
+        lastTime = now;
+        update(delta);
+        render();
+        drawParticles();
+        if (active) requestAnimationFrame(gameLoop);
+      }
+
+      canvas.addEventListener("pointerdown", event => {
+        if (!active) return;
+        pointerDown = true;
+        lastPointer = positionFromEvent(event);
+        trail = [lastPointer];
+        canvas.setPointerCapture(event.pointerId);
+      });
+
+      canvas.addEventListener("pointermove", event => {
+        if (!pointerDown) return;
+        const point = positionFromEvent(event);
+        if (lastPointer) sliceAt(lastPointer, point);
+        trail.push(point);
+        if (trail.length > 9) trail.shift();
+        lastPointer = point;
+      });
+
+      function endPointer() {
+        pointerDown = false;
+        lastPointer = null;
+        window.setTimeout(() => { trail = []; }, 100);
+      }
+
+      canvas.addEventListener("pointerup", endPointer);
+      canvas.addEventListener("pointercancel", endPointer);
+      startButton.addEventListener("click", startRound);
+      window.addEventListener("resize", resizeCanvas);
+
+      soundToggle.addEventListener("click", () => {
+        soundOn = !soundOn;
+        soundToggle.setAttribute("aria-pressed", String(soundOn));
+        soundLabel.textContent = soundOn ? "Sound on" : "Sound off";
+        soundToggle.querySelector("[aria-hidden='true']").textContent = soundOn ? "🔊" : "🔇";
+        if (!soundOn && "speechSynthesis" in window) window.speechSynthesis.cancel();
+      });
+
+      document.querySelectorAll(".category").forEach(button => {
+        button.addEventListener("click", () => {
+          selectedCategory = button.dataset.category;
+          document.querySelectorAll(".category").forEach(categoryButton => {
+            categoryButton.setAttribute("aria-pressed", String(categoryButton === button));
+          });
+        });
+      });
+
+      resizeCanvas();
+      render();
+    })();
+  </script>
+</body>
+</html>
