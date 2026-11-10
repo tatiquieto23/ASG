@@ -528,6 +528,11 @@
       let pointerDown = false;
       let lastPointer = null;
       let trail = [];
+      let audioContext = null;
+      let musicTimer = 0;
+      let musicNoteIndex = 0;
+      let sliceNoiseBuffer = null;
+      let lastMusicNoteAt = 0;
 
       function resizeCanvas() {
         const rect = playArea.getBoundingClientRect();
@@ -543,6 +548,101 @@
         return selectedCategory === "all"
           ? vocabulary
           : vocabulary.filter(item => item.category === selectedCategory);
+      }
+
+      function ensureAudio() {
+        const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+        if (!soundOn || !AudioContextConstructor) return false;
+        if (!audioContext) {
+          audioContext = new AudioContextConstructor();
+          sliceNoiseBuffer = audioContext.createBuffer(1, Math.ceil(audioContext.sampleRate * .14), audioContext.sampleRate);
+          const noise = sliceNoiseBuffer.getChannelData(0);
+          for (let i = 0; i < noise.length; i++) noise[i] = Math.random() * 2 - 1;
+          audioContext.addEventListener("statechange", () => {
+            if (audioContext.state === "running") {
+              soundToggle.title = "";
+              if (active && soundOn) playMusicNote();
+            }
+          });
+        }
+        if (audioContext.state !== "running") {
+          void audioContext.resume().catch(error => {
+            soundToggle.title = "Audio could not start. Tap Sound on to try again.";
+            console.error("Word Whiz audio could not resume:", error);
+          });
+        }
+        return true;
+      }
+
+      function playTone(frequency, startAt, duration, volume, type) {
+        const oscillator = audioContext.createOscillator();
+        const envelope = audioContext.createGain();
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, startAt);
+        envelope.gain.setValueAtTime(.0001, startAt);
+        envelope.gain.exponentialRampToValueAtTime(volume, startAt + .025);
+        envelope.gain.exponentialRampToValueAtTime(.0001, startAt + duration);
+        oscillator.connect(envelope);
+        envelope.connect(audioContext.destination);
+        oscillator.start(startAt);
+        oscillator.stop(startAt + duration + .02);
+      }
+
+      function playMusicNote() {
+        if (!active || !soundOn || !audioContext) return;
+        if (audioContext.state !== "running") {
+          ensureAudio();
+          return;
+        }
+        const now = performance.now();
+        if (now - lastMusicNoteAt < 250) return;
+        lastMusicNoteAt = now;
+        const melody = [523.25, 659.25, 783.99, 659.25, 587.33, 783.99, 880, 783.99,
+          659.25, 523.25, 587.33, 659.25, 783.99, 659.25, 587.33, 523.25];
+        const note = musicNoteIndex % melody.length;
+        const startAt = audioContext.currentTime + .025;
+        playTone(melody[note], startAt, .4, .04, "triangle");
+        if (note % 4 === 0) {
+          const bass = [261.63, 196, 220, 196][Math.floor(note / 4) % 4];
+          playTone(bass, startAt, .5, .024, "sine");
+        }
+        musicNoteIndex++;
+      }
+
+      function startBackgroundMusic() {
+        if (!ensureAudio()) return;
+        if (musicTimer) return;
+        musicNoteIndex = 0;
+        lastMusicNoteAt = 0;
+        playMusicNote();
+        musicTimer = window.setInterval(playMusicNote, 400);
+      }
+
+      function stopBackgroundMusic() {
+        window.clearInterval(musicTimer);
+        musicTimer = 0;
+      }
+
+      function playSliceSound() {
+        if (!ensureAudio()) return;
+        const now = audioContext.currentTime;
+        const whoosh = audioContext.createBufferSource();
+        const filter = audioContext.createBiquadFilter();
+        const whooshGain = audioContext.createGain();
+        whoosh.buffer = sliceNoiseBuffer;
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(1500, now);
+        filter.frequency.exponentialRampToValueAtTime(380, now + .12);
+        whooshGain.gain.setValueAtTime(.0001, now);
+        whooshGain.gain.exponentialRampToValueAtTime(.035, now + .018);
+        whooshGain.gain.exponentialRampToValueAtTime(.0001, now + .13);
+        whoosh.connect(filter);
+        filter.connect(whooshGain);
+        whooshGain.connect(audioContext.destination);
+        whoosh.start(now);
+        whoosh.stop(now + .14);
+        playTone(880, now + .015, .2, .035, "sine");
+        playTone(1174.66, now + .075, .24, .025, "sine");
       }
 
       function iconSource(icon) {
@@ -723,6 +823,7 @@
             score += 10;
             scoreDisplay.textContent = score;
             makeBurst(item);
+            playSliceSound();
             showLearnedWord(item);
           }
         }
@@ -735,6 +836,7 @@
 
       function finishRound() {
         active = false;
+        stopBackgroundMusic();
         items = [];
         if ("speechSynthesis" in window) window.speechSynthesis.cancel();
         overlayTitle.textContent = "Amazing word work!";
@@ -746,6 +848,7 @@
       function startRound() {
         if ("speechSynthesis" in window) window.speechSynthesis.cancel();
         active = true;
+        startBackgroundMusic();
         score = 0;
         secondsLeft = 60;
         spawnClock = 0;
@@ -847,7 +950,17 @@
         soundToggle.setAttribute("aria-pressed", String(soundOn));
         soundLabel.textContent = soundOn ? "Sound on" : "Sound off";
         soundToggle.querySelector("[aria-hidden='true']").textContent = soundOn ? "🔊" : "🔇";
+        soundToggle.title = "";
+        if (soundOn && active) {
+          startBackgroundMusic();
+        } else {
+          stopBackgroundMusic();
+        }
         if (!soundOn && "speechSynthesis" in window) window.speechSynthesis.cancel();
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && active && soundOn) startBackgroundMusic();
       });
 
       document.querySelectorAll(".category").forEach(button => {
