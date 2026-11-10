@@ -2,8 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#fff9ee">
+  <meta name="description" content="A cheerful picture-slicing game that helps kids learn words.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/webp" sizes="192x192" href="./icons/icon-192.webp">
   <title>Word Whiz — Slice & Say</title>
   <style>
     :root {
@@ -28,7 +33,7 @@
       min-width: 320px;
       min-height: 100vh;
       margin: 0;
-      padding: 24px;
+      padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
       overflow-x: hidden;
       background:
         radial-gradient(ellipse at 12% 10%, rgba(255, 215, 111, .24), transparent 25%),
@@ -144,6 +149,42 @@
     .stat.score { background: #fff3d3; }
     .stat-label { display: block; color: var(--muted); font-size: 10px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
     .stat-value { display: block; margin-top: 1px; font-size: 21px; font-weight: 950; line-height: 1.1; }
+
+    .level-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 28px 13px;
+    }
+
+    .level-label {
+      margin-right: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+    }
+
+    .level-choice {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid #e9eee5;
+      border-radius: 12px;
+      background: #fff;
+      color: #60736c;
+      font-size: 12px;
+      font-weight: 850;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+
+    .level-choice:hover { border-color: #9dcdb1; }
+    .level-choice[aria-pressed="true"] { border-color: #e7b44c; background: #fff5d9; color: #785b1f; }
+    .level-detail { color: #87958a; font-size: 10px; font-weight: 700; }
 
     .category-row {
       display: flex;
@@ -352,6 +393,10 @@
       .category-row { gap: 6px; padding: 0 17px 13px; overflow-x: auto; }
       .category-label { display: none; }
       .category { padding: 0 11px; white-space: nowrap; }
+      .level-row { gap: 6px; padding: 0 17px 12px; overflow-x: auto; }
+      .level-label { display: none; }
+      .level-choice { gap: 5px; padding: 0 10px; white-space: nowrap; }
+      .level-detail { font-size: 9px; }
       .play-area { height: min(62vh, 480px); min-height: 340px; margin: 0 8px; border-radius: 18px; }
       .bottom-row { align-items: flex-start; padding: 15px 17px 18px; }
       .round-note { max-width: 110px; line-height: 1.5; }
@@ -405,12 +450,23 @@
         </div>
       </header>
 
+      <div class="level-row" role="group" aria-label="Choose difficulty level">
+        <span class="level-label">Level</span>
+        <button class="level-choice" type="button" data-level="1" aria-pressed="true">
+          Level 1 <span class="level-detail">Easy pace</span>
+        </button>
+        <button class="level-choice" type="button" data-level="2" aria-pressed="false">
+          Level 2 <span class="level-detail">10% faster · 5% more often</span>
+        </button>
+      </div>
+
       <nav class="category-row" aria-label="Choose word category">
         <span class="category-label">Practice</span>
         <button class="category" type="button" data-category="all" aria-pressed="true">Everything</button>
         <button class="category" type="button" data-category="fruit" aria-pressed="false">🍎 Fruit</button>
         <button class="category" type="button" data-category="vegetable" aria-pressed="false">🥕 Veggies</button>
         <button class="category" type="button" data-category="home" aria-pressed="false">🏠 At home</button>
+        <button class="category" type="button" data-category="animal" aria-pressed="false">🐾 Animals</button>
       </nav>
 
       <div class="play-area" id="play-area">
@@ -491,7 +547,19 @@
         { word: "Key", emoji: "🔑", category: "home" },
         { word: "Teddy", emoji: "🧸", category: "home" },
         { word: "Towel", icon: "towel", category: "home" },
-        { word: "Toothbrush", emoji: "🪥", category: "home" }
+        { word: "Toothbrush", emoji: "🪥", category: "home" },
+        { word: "Cat", emoji: "🐈", category: "animal" },
+        { word: "Dog", emoji: "🐕", category: "animal" },
+        { word: "Cow", emoji: "🐄", category: "animal" },
+        { word: "Pig", emoji: "🐖", category: "animal" },
+        { word: "Horse", emoji: "🐎", category: "animal" },
+        { word: "Sheep", emoji: "🐑", category: "animal" },
+        { word: "Chicken", emoji: "🐔", category: "animal" },
+        { word: "Duck", emoji: "🦆", category: "animal" },
+        { word: "Fish", emoji: "🐟", category: "animal" },
+        { word: "Rabbit", emoji: "🐇", category: "animal" },
+        { word: "Elephant", emoji: "🐘", category: "animal" },
+        { word: "Lion", emoji: "🦁", category: "animal" }
       ];
 
       const canvas = document.querySelector("#game-canvas");
@@ -505,6 +573,7 @@
       const overlayCopy = document.querySelector("#overlay-copy");
       const soundToggle = document.querySelector("#sound-toggle");
       const soundLabel = document.querySelector("#sound-label");
+      const levelButtons = document.querySelectorAll(".level-choice");
       const learnedContainer = document.querySelector("#learned-words");
       const wordPop = document.querySelector("#word-pop");
       const popEmoji = document.querySelector("#pop-emoji");
@@ -517,6 +586,7 @@
       let active = false;
       let soundOn = true;
       let selectedCategory = "all";
+      let selectedLevel = 1;
       let score = 0;
       let secondsLeft = 60;
       let lastTime = 0;
@@ -548,6 +618,22 @@
         return selectedCategory === "all"
           ? vocabulary
           : vocabulary.filter(item => item.category === selectedCategory);
+      }
+
+      function setLevel(level) {
+        const nextLevel = Number(level);
+        if (nextLevel !== 1 && nextLevel !== 2) return;
+        const speedRatio = (nextLevel === 2 ? 1.1 : 1) / (selectedLevel === 2 ? 1.1 : 1);
+        selectedLevel = nextLevel;
+        for (const item of items) {
+          item.vx *= speedRatio;
+          item.vy *= speedRatio;
+          item.spin *= speedRatio;
+          item.wobbleSpeed *= speedRatio;
+        }
+        levelButtons.forEach(button => {
+          button.setAttribute("aria-pressed", String(Number(button.dataset.level) === selectedLevel));
+        });
       }
 
       function ensureAudio() {
@@ -677,17 +763,18 @@
         const list = availableWords();
         const entry = list[Math.floor(Math.random() * list.length)];
         const radius = 44 + Math.random() * 7;
+        const speed = selectedLevel === 2 ? 1.1 : 1;
         items.push({
           ...entry,
           x: radius + Math.random() * Math.max(1, width - radius * 2),
           y: -radius - 10,
           radius,
-          vx: (Math.random() - .5) * 2.3,
-          vy: .8 + Math.random() * 1.1,
+          vx: (Math.random() - .5) * 2.3 * speed,
+          vy: (.8 + Math.random() * 1.1) * speed,
           rotation: (Math.random() - .5) * .28,
-          spin: (Math.random() - .5) * .0018,
+          spin: (Math.random() - .5) * .0018 * speed,
           wobble: Math.random() * Math.PI * 2,
-          wobbleSpeed: .001 + Math.random() * .0016,
+          wobbleSpeed: (.001 + Math.random() * .0016) * speed,
           wobbleSize: 10 + Math.random() * 17
         });
       }
@@ -758,7 +845,8 @@
         const categoryColors = {
           fruit: "#e26b4e",
           vegetable: "#39835a",
-          home: "#7962b7"
+          home: "#7962b7",
+          animal: "#c27a32"
         };
         setItemVisual(popEmoji, item, "word-emoji");
         popWord.textContent = item.word;
@@ -869,7 +957,8 @@
           secondsLeft = Math.max(0, secondsLeft - delta / 1000);
           timerDisplay.textContent = Math.ceil(secondsLeft);
           spawnClock += delta;
-          if (spawnClock > 2100 && items.length < 2) {
+          const spawnInterval = selectedLevel === 2 ? 2000 : 2100;
+          if (spawnClock > spawnInterval && items.length < 2) {
             spawnItem();
             spawnClock = 0;
           }
@@ -944,6 +1033,9 @@
       canvas.addEventListener("pointercancel", endPointer);
       startButton.addEventListener("click", startRound);
       window.addEventListener("resize", resizeCanvas);
+      levelButtons.forEach(button => {
+        button.addEventListener("click", () => setLevel(button.dataset.level));
+      });
 
       soundToggle.addEventListener("click", () => {
         soundOn = !soundOn;
@@ -975,6 +1067,15 @@
       resizeCanvas();
       render();
     })();
+  </script>
+  <script>
+    if ("serviceWorker" in navigator && location.protocol !== "file:" && !window.Capacitor?.isNativePlatform?.()) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(error => {
+          console.error("Word Whiz offline support could not be enabled:", error);
+        });
+      });
+    }
   </script>
 </body>
 </html>

@@ -1,24 +1,57 @@
 # Word Whiz — Slice & Say
 
-A small, browser-based word-learning game for kids. Swipe through a floating picture to slice it, hear the object’s name, and see the word appear. Pictures move gently, and only a couple appear at once to keep the game focused.
+A word-learning game for kids. Swipe through a floating picture to slice it, hear its name, and see the word. Practice fruit, vegetables, household items, and animals, with two difficulty levels.
 
-## Play
+## Web and Windows
 
-Open `index.html` in a modern web browser and select **Let’s play!** No installation, build step, or server is required.
+The site is a Progressive Web App (PWA). Serve the repository root over HTTPS (or localhost while developing) to enable installation and offline play. Visitors can install it from their browser; on Windows, use the browser's **Install this site as an app** option.
 
-- Use a mouse or touchscreen to swipe through a picture.
-- Each successful slice earns 10 points, plays the word aloud, and adds it to the learned-words list.
-- Choose **Everything**, **Fruit**, **Veggies**, or **At home** to practice a category.
-- Each round lasts 60 seconds. Use **Sound on/off** to control spoken words, gentle background music, and slice sound effects.
+```sh
+npm install
+npm run build:web
+```
 
-Spoken words use the browser’s built-in speech synthesis. Voice availability and pronunciation depend on the browser and device. Background music and slice effects are generated in the browser with the Web Audio API; audio begins after starting a round.
+The deployable site is copied to `www/`. Deploy the contents of that folder to a static HTTPS host. Opening `index.html` directly from disk still works, but installation and offline caching require HTTPS or localhost.
+
+## Android
+
+Install Android Studio, its Android SDK, and a compatible JDK, then run:
+
+```sh
+npm install
+npm run android:apk
+```
+
+The debug APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`. For local device/emulator work, `npm run android:open` opens the project in Android Studio. Publishing to Google Play requires a signed release build.
+
+## iPhone and iPad
+
+The Capacitor iOS project is included in `ios/`. Building and signing it requires macOS, Xcode, and an Apple developer signing setup. On a Mac:
+
+```sh
+npm install
+npm run ios:open
+```
+
+Select a signing team and destination in Xcode to run it on a device or archive it for distribution.
+
+## Game controls
+
+- Swipe through a picture with a mouse or touchscreen.
+- Each slice earns 10 points, speaks the word, and adds it to the learned-words list.
+- Choose **Everything**, **Fruit**, **Veggies**, **At home**, or **Animals**.
+- **Level 1** is the original pace. **Level 2** moves objects 10% faster and spawns them 5% more often.
+- Each round lasts 60 seconds. The sound toggle controls spoken words, background music, and slice effects.
+
+Speech uses the browser or device's built-in speech synthesis. Music and effects are generated with the Web Audio API.
 
 ## Word categories
 
 - **Fruit:** apple, banana, orange, strawberry, grapes, pear, watermelon, pineapple
 - **Veggies:** carrot, broccoli, corn, tomato, potato, pepper, cucumber, onion
 - **At home:** cup, spoon, fork, knife, plate, bowl, pan, pot, teapot, book, clock, lamp, chair, key, teddy, towel, toothbrush
+- **Animals:** cat, dog, cow, pig, horse, sheep, chicken, duck, fish, rabbit, elephant, lion
 
-## Built with
+## Project
 
-The game is a single self-contained HTML file using CSS and vanilla JavaScript. It draws the falling pictures and swipe effects on a canvas; household objects use inline SVG illustrations.
+The game itself remains a single HTML/CSS/JavaScript app. Capacitor wraps it for Android and iOS, while the PWA supports web and Windows installation. The app ID is `com.wordwhiz.game`; change it in `capacitor.config.ts` before publishing under a different identity.
