@@ -268,6 +268,24 @@
       white-space: nowrap;
     }
 
+    .combo-badge {
+      position: absolute;
+      z-index: 2;
+      bottom: 16px;
+      right: 16px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255,255,255,.9);
+      border-radius: 99px;
+      background: #fff3cc;
+      box-shadow: 0 4px 14px rgba(104, 78, 24, .12);
+      color: #966412;
+      font-size: 12px;
+      font-weight: 950;
+      pointer-events: none;
+    }
+    .combo-badge[hidden] { display: none; }
+    .combo-badge.show { animation: combo-pop .3s cubic-bezier(.2,.8,.25,1.3); }
+
     .word-pop {
       position: absolute;
       z-index: 2;
@@ -401,9 +419,15 @@
       .bottom-row { align-items: flex-start; padding: 15px 17px 18px; }
       .round-note { max-width: 110px; line-height: 1.5; }
       .instruction { top: 13px; font-size: 11px; }
+      .combo-badge { right: 10px; bottom: 12px; }
       .word-pop { top: 52px; min-width: 160px; }
     }
 
+    @keyframes combo-pop {
+      0% { transform: scale(.75) rotate(-5deg); }
+      70% { transform: scale(1.12) rotate(2deg); }
+      100% { transform: scale(1) rotate(0); }
+    }
     @keyframes word-card-pop {
       0% { opacity: 0; transform: translate(-50%, -22px) scale(.65) rotate(-7deg); }
       68% { opacity: 1; transform: translate(-50%, 3px) scale(1.08) rotate(2deg); }
@@ -471,11 +495,12 @@
 
       <div class="play-area" id="play-area">
         <canvas id="game-canvas" aria-label="Floating pictures to slice"></canvas>
-        <div class="instruction" aria-hidden="true">✦ Swipe through a picture to slice it ✦</div>
+        <div class="instruction" aria-hidden="true">✦ Swipe to slice · catch golden words! ✦</div>
+        <div class="combo-badge" id="combo-badge" aria-live="polite" hidden></div>
         <div class="word-pop" id="word-pop" aria-live="polite">
           <span class="word-emoji" id="pop-emoji" aria-hidden="true"></span>
           <strong id="pop-word"></strong>
-          <span class="word-cheer">You found it!</span>
+          <span class="word-cheer" id="word-cheer">You found it!</span>
         </div>
         <div class="overlay" id="overlay">
           <div class="overlay-card">
@@ -578,6 +603,8 @@
       const wordPop = document.querySelector("#word-pop");
       const popEmoji = document.querySelector("#pop-emoji");
       const popWord = document.querySelector("#pop-word");
+      const wordCheer = document.querySelector("#word-cheer");
+      const comboBadge = document.querySelector("#combo-badge");
       const iconImages = Object.create(null);
 
       let width = 0;
@@ -589,6 +616,9 @@
       let selectedLevel = 1;
       let score = 0;
       let secondsLeft = 60;
+      let roundElapsed = 0;
+      let streakCount = 0;
+      let lastSliceAt = 0;
       let lastTime = 0;
       let spawnClock = 0;
       let wordPopTimeout = 0;
@@ -763,9 +793,11 @@
         const list = availableWords();
         const entry = list[Math.floor(Math.random() * list.length)];
         const radius = 44 + Math.random() * 7;
-        const speed = selectedLevel === 2 ? 1.1 : 1;
+        const progress = Math.min(1, roundElapsed / 60000);
+        const speed = (selectedLevel === 2 ? 1.1 : 1) * (1 + progress * .45);
         items.push({
           ...entry,
+          golden: Math.random() < .1,
           x: radius + Math.random() * Math.max(1, width - radius * 2),
           y: -radius - 10,
           radius,
@@ -783,17 +815,31 @@
         ctx.save();
         ctx.translate(item.x, item.y);
         ctx.rotate(item.rotation);
-        ctx.shadowColor = "rgba(45, 80, 52, .16)";
-        ctx.shadowBlur = 12;
+        ctx.shadowColor = item.golden ? "rgba(232, 173, 47, .55)" : "rgba(45, 80, 52, .16)";
+        ctx.shadowBlur = item.golden ? 21 : 12;
         ctx.shadowOffsetY = 6;
         ctx.beginPath();
         ctx.arc(0, 0, item.radius, 0, Math.PI * 2);
         ctx.fillStyle = "rgba(255, 255, 255, .76)";
         ctx.fill();
         ctx.shadowColor = "transparent";
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "rgba(255, 255, 255, .96)";
+        ctx.lineWidth = item.golden ? 4 : 2;
+        ctx.strokeStyle = item.golden ? "#f3bd4d" : "rgba(255, 255, 255, .96)";
         ctx.stroke();
+        if (item.golden) {
+          ctx.beginPath();
+          ctx.arc(0, 0, item.radius - 6, 0, Math.PI * 2);
+          ctx.setLineDash([3, 7]);
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = "rgba(220, 159, 37, .7)";
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = "#e2a72f";
+          ctx.font = "bold 18px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("★", item.radius * .66, -item.radius * .66);
+        }
         if (item.icon) {
           const image = getIconImage(item.icon);
           if (image.complete && image.naturalWidth) {
@@ -850,6 +896,9 @@
         };
         setItemVisual(popEmoji, item, "word-emoji");
         popWord.textContent = item.word;
+        wordCheer.textContent = item.golden
+          ? `Golden bonus! +50 points · +3 seconds`
+          : streakCount > 1 ? `${streakCount}× combo! Keep it going!` : "You found it!";
         wordPop.style.setProperty("--word-color", categoryColors[item.category] || "#2e8b69");
         wordPop.classList.remove("show");
         void wordPop.offsetWidth;
@@ -908,7 +957,18 @@
           const item = items[i];
           if (pointToSegmentDistance(item, start, end) < item.radius + 5) {
             items.splice(i, 1);
-            score += 10;
+            const now = performance.now();
+            streakCount = now - lastSliceAt <= 1800 ? Math.min(streakCount + 1, 5) : 1;
+            lastSliceAt = now;
+            comboBadge.hidden = streakCount < 2;
+            if (streakCount > 1) {
+              comboBadge.textContent = `🔥 ${streakCount}× COMBO`;
+              comboBadge.classList.remove("show");
+              void comboBadge.offsetWidth;
+              comboBadge.classList.add("show");
+            }
+            score += 10 * streakCount + (item.golden ? 50 : 0);
+            if (item.golden) secondsLeft = Math.min(75, secondsLeft + 3);
             scoreDisplay.textContent = score;
             makeBurst(item);
             playSliceSound();
@@ -939,12 +999,17 @@
         startBackgroundMusic();
         score = 0;
         secondsLeft = 60;
+        roundElapsed = 0;
+        streakCount = 0;
+        lastSliceAt = 0;
         spawnClock = 0;
         items = [];
         particles = [];
         learned = new Set();
         scoreDisplay.textContent = "0";
         timerDisplay.textContent = "60";
+        comboBadge.hidden = true;
+        comboBadge.classList.remove("show");
         learnedContainer.innerHTML = '<span class="learned-empty">Slice a picture to get started!</span>';
         wordPop.classList.remove("show");
         overlay.hidden = true;
@@ -954,11 +1019,21 @@
 
       function update(delta) {
         if (active) {
+          roundElapsed += delta;
           secondsLeft = Math.max(0, secondsLeft - delta / 1000);
           timerDisplay.textContent = Math.ceil(secondsLeft);
+          if (streakCount && performance.now() - lastSliceAt > 1800) {
+            streakCount = 0;
+            lastSliceAt = 0;
+            comboBadge.hidden = true;
+            comboBadge.classList.remove("show");
+          }
           spawnClock += delta;
-          const spawnInterval = selectedLevel === 2 ? 2000 : 2100;
-          if (spawnClock > spawnInterval && items.length < 2) {
+          const progress = Math.min(1, roundElapsed / 60000);
+          const baseSpawnInterval = selectedLevel === 2 ? 2000 : 2100;
+          const spawnInterval = baseSpawnInterval * (1 - progress * .32);
+          const maxItems = progress >= .35 ? 3 : 2;
+          if (spawnClock > spawnInterval && items.length < maxItems) {
             spawnItem();
             spawnClock = 0;
           }

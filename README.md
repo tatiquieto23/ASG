@@ -38,10 +38,11 @@ Select a signing team and destination in Xcode to run it on a device or archive 
 ## Game controls
 
 - Swipe through a picture with a mouse or touchscreen.
-- Each slice earns 10 points, speaks the word, and adds it to the learned-words list.
+- Each slice speaks the word and adds it to the learned-words list. Quick slices build a streak multiplier up to 5×.
+- Golden words are rare, glow gold, and award 50 bonus points plus 3 seconds.
 - Choose **Everything**, **Fruit**, **Veggies**, **At home**, or **Animals**.
-- **Level 1** is the original pace. **Level 2** moves objects 10% faster and spawns them 5% more often.
-- Each round lasts 60 seconds. The sound toggle controls spoken words, background music, and slice effects.
+- **Level 1** is the easy pace. **Level 2** starts objects 10% faster and spawns them about 5% more often. Both levels speed up as the round goes on.
+- Each round starts with 60 seconds; golden words can extend it by up to 15 seconds. The sound toggle controls spoken words, background music, and slice effects.
 
 Speech uses the browser or device's built-in speech synthesis. Music and effects are generated with the Web Audio API.
 
