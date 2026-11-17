@@ -1,4 +1,4 @@
-const CACHE_NAME = "word-whiz-v1";
+const CACHE_NAME = "word-whiz-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
