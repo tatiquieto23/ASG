@@ -1,0 +1,46 @@
+category,word,filename
+Fruit,Apple,audio/apple.mp3
+Fruit,Banana,audio/banana.mp3
+Fruit,Orange,audio/orange.mp3
+Fruit,Strawberry,audio/strawberry.mp3
+Fruit,Grapes,audio/grapes.mp3
+Fruit,Pear,audio/pear.mp3
+Fruit,Watermelon,audio/watermelon.mp3
+Fruit,Pineapple,audio/pineapple.mp3
+Veggies,Carrot,audio/carrot.mp3
+Veggies,Broccoli,audio/broccoli.mp3
+Veggies,Corn,audio/corn.mp3
+Veggies,Tomato,audio/tomato.mp3
+Veggies,Potato,audio/potato.mp3
+Veggies,Pepper,audio/pepper.mp3
+Veggies,Cucumber,audio/cucumber.mp3
+Veggies,Onion,audio/onion.mp3
+At home,Cup,audio/cup.mp3
+At home,Spoon,audio/spoon.mp3
+At home,Fork,audio/fork.mp3
+At home,Knife,audio/knife.mp3
+At home,Plate,audio/plate.mp3
+At home,Bowl,audio/bowl.mp3
+At home,Pan,audio/pan.mp3
+At home,Pot,audio/pot.mp3
+At home,Teapot,audio/teapot.mp3
+At home,Book,audio/book.mp3
+At home,Clock,audio/clock.mp3
+At home,Lamp,audio/lamp.mp3
+At home,Chair,audio/chair.mp3
+At home,Key,audio/key.mp3
+At home,Teddy,audio/teddy.mp3
+At home,Towel,audio/towel.mp3
+At home,Toothbrush,audio/toothbrush.mp3
+Animals,Cat,audio/cat.mp3
+Animals,Dog,audio/dog.mp3
+Animals,Cow,audio/cow.mp3
+Animals,Pig,audio/pig.mp3
+Animals,Horse,audio/horse.mp3
+Animals,Sheep,audio/sheep.mp3
+Animals,Chicken,audio/chicken.mp3
+Animals,Duck,audio/duck.mp3
+Animals,Fish,audio/fish.mp3
+Animals,Rabbit,audio/rabbit.mp3
+Animals,Elephant,audio/elephant.mp3
+Animals,Lion,audio/lion.mp3

@@ -14,4 +14,6 @@ for (const file of ["index.html", "manifest.webmanifest", "service-worker.js"]) 
 
 await mkdir(path.join(output, "icons"), { recursive: true });
 await cp(path.join(root, "icons"), path.join(output, "icons"), { recursive: true });
+await mkdir(path.join(output, "audio"), { recursive: true });
+await cp(path.join(root, "assets", "audio"), path.join(output, "audio"), { recursive: true });
 console.log(`Web app prepared in ${output}`);

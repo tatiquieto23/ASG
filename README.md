@@ -13,6 +13,10 @@ npm run build:web
 
 The deployable site is copied to `www/`. Deploy the contents of that folder to a static HTTPS host. Opening `index.html` directly from disk still works, but installation and offline caching require HTTPS or localhost.
 
+## Custom word recordings
+
+Place one MP3 pronunciation per word in `assets/audio/`, using the lowercase word as its filename (for example, `assets/audio/apple.mp3`). The app's vocabulary entries in `index.html` point to the matching files under `audio/`. `npm run build:web` copies the recordings into `www/audio/`; Capacitor builds include them after syncing. If a clip has not been added yet, the app uses the device's speech synthesis instead. The full filename checklist is in [word-recordings.csv](./word-recordings.csv).
+
 ## Android
 
 Install Android Studio, its Android SDK, and a compatible JDK, then run:
@@ -44,7 +48,7 @@ Select a signing team and destination in Xcode to run it on a device or archive 
 - **Level 1** is the easy pace. **Level 2** starts objects 10% faster and spawns them about 5% more often. Both levels speed up as the round goes on.
 - Each round starts with 60 seconds; golden words can extend it by up to 15 seconds. The sound toggle controls spoken words, background music, and slice effects.
 
-Speech uses the browser or device's built-in speech synthesis. Music and effects are generated with the Web Audio API.
+Word pronunciation uses the custom recording when available and otherwise falls back to the browser or device's built-in speech synthesis. Music and effects are generated with the Web Audio API.
 
 ## Word categories
 
